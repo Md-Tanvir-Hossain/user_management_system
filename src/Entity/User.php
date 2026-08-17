@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use Symfony\Component\Validator\Constraints as Assert;
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -17,23 +18,59 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private ?int $id = null;
 
+    // #[ORM\Column(length: 180, unique: true)]
+    // private ?string $email = null;
+
     #[ORM\Column(length: 180, unique: true)]
+    #[Assert\NotBlank(message: 'Email is required.')]
+    #[Assert\Email(message: 'Please enter a valid email address.')]
     private ?string $email = null;
 
+
+    // #[ORM\Column(length: 255)]
+    // private ?string $password = null;
+
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: 'Password is required.')]
+    #[Assert\Length(
+        min: 8,
+        max: 255,
+        minMessage: 'Password must be at least {{ limit }} characters.'
+    )]
     private ?string $password = null;
+
 
     #[ORM\Column]
     private array $roles = ['ROLE_USER'];
 
     #[ORM\Column(length: 100)]
+    #[Assert\NotBlank(message: 'First name is required.')]
+    #[Assert\Length(
+        min: 2,
+        max: 100,
+        minMessage: 'First name must be at least {{ limit }} characters.',
+        maxMessage: 'First name cannot be longer than {{ limit }} characters.'
+    )]
     private ?string $firstName = null;
 
     #[ORM\Column(length: 100)]
+    #[Assert\NotBlank(message: 'Last name is required.')]
+    #[Assert\Length(
+        min: 2,
+        max: 100,
+        minMessage: 'Last name must be at least {{ limit }} characters.',
+        maxMessage: 'Last name cannot be longer than {{ limit }} characters.'
+    )]
     private ?string $lastName = null;
 
-    #[ORM\Column]
-    private bool $isActive = true;
+    #[ORM\Column(length: 20, options: ['default' => 'active'])]
+    private string $status = 'active';
+
+    #[ORM\Column(length: 64, nullable: true, unique: true)]
+    private ?string $verificationToken = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $verificationTokenExpiresAt = null;
 
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
@@ -51,7 +88,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->createdAt = $now;
         $this->updatedAt = $now;
         $this->roles = ['ROLE_USER'];
-        $this->isActive = true;
+        $this->status = 'active';
     }
 
     public function getId(): ?int
@@ -135,17 +172,58 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function isActive(): bool
+
+    public function getStatus(): string
     {
-        return $this->isActive;
+        return $this->status;
     }
 
-    public function setIsActive(bool $isActive): static
+
+
+    public function setStatus(string $status): static
     {
-        $this->isActive = $isActive;
+        $allowedStatuses = ['active', 'blocked', 'unverified'];
+
+        if (!in_array($status, $allowedStatuses, true)) {
+            throw new \InvalidArgumentException(
+                sprintf(
+                    'Invalid user status "%s". Allowed statuses: %s',
+                    $status,
+                    implode(', ', $allowedStatuses)
+                )
+            );
+        }
+
+        $this->status = $status;
 
         return $this;
     }
+
+    public function getVerificationToken(): ?string
+    {
+        return $this->verificationToken;
+    }
+
+    public function setVerificationToken(?string $verificationToken): static
+    {
+        $this->verificationToken = $verificationToken;
+
+        return $this;
+    }
+
+    public function getVerificationTokenExpiresAt(): ?\DateTimeImmutable
+    {
+        return $this->verificationTokenExpiresAt;
+    }
+
+    public function setVerificationTokenExpiresAt(
+        ?\DateTimeImmutable $verificationTokenExpiresAt
+    ): static {
+        $this->verificationTokenExpiresAt = $verificationTokenExpiresAt;
+
+        return $this;
+    }
+
 
     public function getCreatedAt(): ?\DateTimeImmutable
     {

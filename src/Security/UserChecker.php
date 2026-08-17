@@ -10,15 +10,21 @@ use Symfony\Component\Security\Core\User\UserInterface;
 
 class UserChecker implements UserCheckerInterface
 {
-    public function checkPreAuth(UserInterface $user): void
+   public function checkPreAuth(UserInterface $user): void
     {
         if (!$user instanceof User) {
             return;
         }
 
-        if (!$user->isActive()) {
+        if ($user->getStatus() === 'blocked') {
             throw new CustomUserMessageAccountStatusException(
                 'Your account has been blocked.'
+            );
+        }
+
+        if ($user->getStatus() === 'unverified') {
+            throw new CustomUserMessageAccountStatusException(
+                'Your account has not been verified yet.'
             );
         }
     }
