@@ -4,10 +4,12 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Form\RegistrationFormType;
+use App\Message\SendVerificationEmail;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -17,7 +19,8 @@ final class RegistrationController extends AbstractController
     public function register(
         Request $request,
         EntityManagerInterface $entityManager,
-        UserPasswordHasherInterface $passwordHasher
+        UserPasswordHasherInterface $passwordHasher,
+        MessageBusInterface $messageBus
     ): Response {
         $user = new User();
 
@@ -25,7 +28,6 @@ final class RegistrationController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            // Hash the user's password before saving it.
             $hashedPassword = $passwordHasher->hashPassword(
                 $user,
                 $user->getPassword()
@@ -33,10 +35,10 @@ final class RegistrationController extends AbstractController
 
             $user->setPassword($hashedPassword);
 
-            // New accounts must be verified before becoming active.
+            // New users must verify their email.
             $user->setStatus('unverified');
 
-            // Generate a secure verification token.
+            // Generate a secure 64-character verification token.
             $user->setVerificationToken(
                 bin2hex(random_bytes(32))
             );
@@ -48,6 +50,11 @@ final class RegistrationController extends AbstractController
 
             $entityManager->persist($user);
             $entityManager->flush();
+
+            // Send verification email asynchronously.
+            $messageBus->dispatch(
+                new SendVerificationEmail($user->getId())
+            );
 
             $this->addFlash(
                 'success',

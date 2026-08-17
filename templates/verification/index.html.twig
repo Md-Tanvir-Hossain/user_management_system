@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Email Verification{% endblock %}
+
+{% block body %}
+<div class="example-wrapper">
+    {% if success %}
+        <h1>Email Verified ✅</h1>
+        <p>{{ message }}</p>
+
+        <a href="{{ path('app_login') }}">
+            Sign in
+        </a>
+    {% else %}
+        <h1>Verification Failed ❌</h1>
+        <p>{{ message }}</p>
+
+        <a href="{{ path('app_login') }}">
+            Back to Login
+        </a>
+    {% endif %}
+</div>
+{% endblock %}
