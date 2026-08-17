@@ -1,0 +1,269 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}User Management{% endblock %}
+
+{% block body %}
+
+<div class="container">
+
+    <h1>User Management</h1>
+
+    {# ==================== TOOLBAR ==================== #}
+
+    <div id="toolbar">
+
+        <span id="selection-count">
+            0 users selected
+        </span>
+
+        <form method="post" action="{{ path('app_admin_users_block') }}" id="block-form" style="display: inline;">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_users_action') }}">
+
+            <div id="selected-user-inputs"></div>
+
+            <button type="submit" id="block-btn" disabled>
+                Block
+            </button>
+        </form>
+
+        <form method="post" action="{{ path('app_admin_users_unblock') }}" id="unblock-form" style="display: inline;">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_users_action') }}">
+
+            <div id="unblock-selected-user-inputs"></div>
+
+            <button type="submit" id="unblock-btn" disabled>
+                Unblock
+            </button>
+        </form>
+
+        <button type="button" id="delete-btn" disabled>
+            Delete
+        </button>
+
+        <button type="button" id="delete-unverified-btn" disabled>
+            Delete Unverified
+        </button>
+
+    </div>
+    {% for message in app.flashes('success') %}
+    <div class="flash-success">
+        {{ message }}
+    </div>
+    {% endfor %}
+
+    {% for message in app.flashes('error') %}
+    <div class="flash-error">
+        {{ message }}
+    </div>
+    {% endfor %}
+
+
+    {# ==================== USER TABLE ==================== #}
+
+    <table border="1" cellpadding="10" cellspacing="0">
+
+        <thead>
+            <tr>
+
+                <th>
+                    <input type="checkbox" id="select-all">
+                </th>
+
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Last Login</th>
+                <th>Registered</th>
+
+            </tr>
+        </thead>
+
+        <tbody>
+
+            {% for user in users %}
+
+            <tr>
+
+                <td>
+                    <input type="checkbox" class="user-checkbox" value="{{ user.id }}">
+                </td>
+
+                <td>
+                    {{ user.id }}
+                </td>
+
+                <td>
+                    {{ user.firstName }} {{ user.lastName }}
+                </td>
+
+                <td>
+                    {{ user.email }}
+                </td>
+
+                <td>
+                    {{ user.status }}
+                </td>
+
+                <td>
+
+                    {% if user.lastLoginAt %}
+
+                    {{ user.lastLoginAt|date('Y-m-d H:i:s') }}
+
+                    {% else %}
+
+                    Never
+
+                    {% endif %}
+
+                </td>
+
+                <td>
+                    {{ user.createdAt|date('Y-m-d H:i:s') }}
+                </td>
+
+            </tr>
+
+            {% else %}
+
+            <tr>
+
+                <td colspan="7">
+                    No users found.
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+
+{# ==================== JAVASCRIPT ==================== #}
+
+<script>
+
+    // Header "Select All" checkbox
+    const selectAll = document.getElementById('select-all');
+
+    // All individual user checkboxes
+    const userCheckboxes = document.querySelectorAll('.user-checkbox');
+
+    // Selection counter
+    const selectionCount = document.getElementById('selection-count');
+
+    // Toolbar buttons
+    const blockButton = document.getElementById('block-btn');
+    const unblockButton = document.getElementById('unblock-btn');
+    const deleteButton = document.getElementById('delete-btn');
+    const deleteUnverifiedButton = document.getElementById('delete-unverified-btn');
+    const blockForm = document.getElementById('block-form');
+    const selectedUserInputs = document.getElementById('selected-user-inputs');
+    const unblockForm = document.getElementById('unblock-form');
+    const unblockSelectedUserInputs =
+        document.getElementById('unblock-selected-user-inputs');
+
+
+    // Update the toolbar according to the current selection
+    function updateSelection() {
+
+        const selected = document.querySelectorAll(
+            '.user-checkbox:checked'
+        );
+
+        const count = selected.length;
+
+        selectionCount.textContent =
+            count +
+            (count === 1
+                ? ' user selected'
+                : ' users selected'
+            );
+
+        selectAll.checked =
+            count > 0 &&
+            count === userCheckboxes.length;
+
+        selectAll.indeterminate =
+            count > 0 &&
+            count < userCheckboxes.length;
+
+        const hasSelection = count > 0;
+
+        blockButton.disabled = !hasSelection;
+        unblockButton.disabled = !hasSelection;
+        deleteButton.disabled = !hasSelection;
+        deleteUnverifiedButton.disabled = !hasSelection;
+
+
+        /*
+        * Rebuild hidden inputs containing selected user IDs.
+        */
+
+        selectedUserInputs.innerHTML = '';
+
+        selected.forEach(function (checkbox) {
+
+            const input = document.createElement('input');
+
+            input.type = 'hidden';
+            input.name = 'user_ids[]';
+            input.value = checkbox.value;
+
+            selectedUserInputs.appendChild(input);
+        });
+
+
+        unblockSelectedUserInputs.innerHTML = '';
+
+        selected.forEach(function (checkbox) {
+
+            const input = document.createElement('input');
+
+            input.type = 'hidden';
+            input.name = 'user_ids[]';
+            input.value = checkbox.value;
+
+            unblockSelectedUserInputs.appendChild(input);
+        });
+
+
+    }
+
+
+    // Select all / deselect all
+    selectAll.addEventListener('change', function () {
+
+        userCheckboxes.forEach(function (checkbox) {
+
+            checkbox.checked = selectAll.checked;
+
+        });
+
+        updateSelection();
+    });
+
+
+    // Individual checkbox changes
+    userCheckboxes.forEach(function (checkbox) {
+
+        checkbox.addEventListener('change', function () {
+
+            updateSelection();
+
+        });
+
+    });
+
+
+    // Initial state
+    updateSelection();
+
+</script>
+
+{% endblock %}
