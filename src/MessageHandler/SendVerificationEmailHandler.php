@@ -14,11 +14,14 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 final class SendVerificationEmailHandler
 {
     public function __construct(
+        // private UserRepository $userRepository,
+        // private MailerInterface $mailer,
+        // private UrlGeneratorInterface $urlGenerator,
         private UserRepository $userRepository,
         private MailerInterface $mailer,
         private UrlGeneratorInterface $urlGenerator,
-    ) {
-    }
+        private string $mailerFrom,
+    ) {}
 
     public function __invoke(SendVerificationEmail $message): void
     {

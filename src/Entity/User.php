@@ -2,6 +2,8 @@
 
 namespace App\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Validator\Constraints as Assert;
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
@@ -81,6 +83,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $lastLoginAt = null;
 
+    /**
+     * @var Collection<int, UserActivity>
+     */
+    #[ORM\OneToMany(targetEntity: UserActivity::class, mappedBy: 'owner', orphanRemoval: true)]
+    private Collection $userActivities;
+
     public function __construct()
     {
         $now = new \DateTimeImmutable();
@@ -89,6 +97,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->updatedAt = $now;
         $this->roles = ['ROLE_USER'];
         $this->status = 'active';
+        $this->userActivities = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -257,6 +266,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setLastLoginAt(?\DateTimeImmutable $lastLoginAt): static
     {
         $this->lastLoginAt = $lastLoginAt;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, UserActivity>
+     */
+    public function getUserActivities(): Collection
+    {
+        return $this->userActivities;
+    }
+
+    public function addUserActivity(UserActivity $userActivity): static
+    {
+        if (!$this->userActivities->contains($userActivity)) {
+            $this->userActivities->add($userActivity);
+            $userActivity->setOwner($this);
+        }
+
+        return $this;
+    }
+
+    public function removeUserActivity(UserActivity $userActivity): static
+    {
+        if ($this->userActivities->removeElement($userActivity)) {
+            // set the owning side to null (unless already changed)
+            if ($userActivity->getOwner() === $this) {
+                $userActivity->setOwner(null);
+            }
+        }
 
         return $this;
     }
