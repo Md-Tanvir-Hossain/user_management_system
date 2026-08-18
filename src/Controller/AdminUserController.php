@@ -16,7 +16,11 @@ final class AdminUserController extends AbstractController
     {
         $users = $entityManager
             ->getRepository(User::class)
-            ->findBy([], ['id' => 'DESC']);
+            ->createQueryBuilder('u')
+            ->orderBy('u.lastLoginAt', 'DESC')
+            ->addOrderBy('u.id', 'DESC')
+            ->getQuery()
+            ->getResult();
 
         return $this->render('admin_user/index.html.twig', [
             'users' => $users,
@@ -142,6 +146,136 @@ final class AdminUserController extends AbstractController
             $this->addFlash(
                 'error',
                 'No blocked users were selected.'
+            );
+        }
+
+        return $this->redirectToRoute('app_admin_users');
+    }
+
+
+    #[Route('/admin/users/delete', name: 'app_admin_users_delete', methods: ['POST'])]
+    public function delete(
+        Request $request,
+        EntityManagerInterface $entityManager
+    ): Response {
+        if (!$this->isCsrfTokenValid(
+            'admin_users_action',
+            $request->request->get('_token')
+        )) {
+            $this->addFlash('error', 'Invalid security token.');
+
+            return $this->redirectToRoute('app_admin_users');
+        }
+
+        $ids = $request->request->all('user_ids');
+
+        if (empty($ids)) {
+            $this->addFlash('error', 'No users were selected.');
+
+            return $this->redirectToRoute('app_admin_users');
+        }
+
+        $deletedCount = 0;
+
+        foreach ($ids as $id) {
+            if (!ctype_digit((string) $id)) {
+                continue;
+            }
+
+            $user = $entityManager
+                ->getRepository(User::class)
+                ->find((int) $id);
+
+            if (!$user instanceof User) {
+                continue;
+            }
+
+            $entityManager->remove($user);
+            $deletedCount++;
+        }
+
+        $entityManager->flush();
+
+        if ($deletedCount > 0) {
+            $this->addFlash(
+                'success',
+                sprintf('%d user(s) deleted successfully.', $deletedCount)
+            );
+        } else {
+            $this->addFlash(
+                'error',
+                'No valid users were found.'
+            );
+        }
+
+        return $this->redirectToRoute('app_admin_users');
+    }
+
+
+    #[Route(
+        '/admin/users/delete-unverified',
+        name: 'app_admin_users_delete_unverified',
+        methods: ['POST']
+    )]
+    public function deleteUnverified(
+        Request $request,
+        EntityManagerInterface $entityManager
+    ): Response {
+        if (!$this->isCsrfTokenValid(
+            'admin_users_action',
+            $request->request->get('_token')
+        )) {
+            $this->addFlash('error', 'Invalid security token.');
+
+            return $this->redirectToRoute('app_admin_users');
+        }
+
+        $ids = $request->request->all('user_ids');
+
+        if (empty($ids)) {
+            $this->addFlash('error', 'No users were selected.');
+
+            return $this->redirectToRoute('app_admin_users');
+        }
+
+        $deletedCount = 0;
+
+        foreach ($ids as $id) {
+            if (!ctype_digit((string) $id)) {
+                continue;
+            }
+
+            $user = $entityManager
+                ->getRepository(User::class)
+                ->find((int) $id);
+
+            if (!$user instanceof User) {
+                continue;
+            }
+
+            // Only delete unverified users.
+            if ($user->getStatus() !== 'unverified') {
+                continue;
+            }
+
+            $entityManager->remove($user);
+            $deletedCount++;
+        }
+
+        $entityManager->flush();
+
+        if ($deletedCount > 0) {
+            $this->addFlash(
+                'success',
+                sprintf(
+                    '%d unverified user(s) deleted successfully.',
+                    $deletedCount
+                )
+            );
+        } else {
+            $this->addFlash(
+                'error',
+                'No selected users were unverified.'
             );
         }
 

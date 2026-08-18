@@ -1,269 +1,840 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}User Management{% endblock %}
+{% block title %}Users | User Management{% endblock %}
 
 {% block body %}
 
-<div class="container">
+<div class="page-container">
 
-    <h1>User Management</h1>
+    <div class="container">
 
-    {# ==================== TOOLBAR ==================== #}
+        <h1>User Management</h1>
 
-    <div id="toolbar">
+        {# ==================== SEARCH / FILTER ==================== #}
 
-        <span id="selection-count">
-            0 users selected
-        </span>
+        <div id="user-filters">
 
-        <form method="post" action="{{ path('app_admin_users_block') }}" id="block-form" style="display: inline;">
-            <input type="hidden" name="_token" value="{{ csrf_token('admin_users_action') }}">
+            <input type="text" id="user-search" placeholder="Search name or email...">
 
-            <div id="selected-user-inputs"></div>
+            <select id="status-filter">
+                <option value="all">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="blocked">Blocked</option>
+                <option value="unverified">Unverified</option>
+            </select>
 
-            <button type="submit" id="block-btn" disabled>
-                Block
-            </button>
-        </form>
+        </div>
 
-        <form method="post" action="{{ path('app_admin_users_unblock') }}" id="unblock-form" style="display: inline;">
-            <input type="hidden" name="_token" value="{{ csrf_token('admin_users_action') }}">
+        {# ==================== TOOLBAR ==================== #}
 
-            <div id="unblock-selected-user-inputs"></div>
+        {# ================= HEADER ================= #}
 
-            <button type="submit" id="unblock-btn" disabled>
-                Unblock
-            </button>
-        </form>
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
 
-        <button type="button" id="delete-btn" disabled>
-            Delete
-        </button>
+            <div>
+                <h1 class="h3 fw-bold mb-1">
+                    Users
+                </h1>
 
-        <button type="button" id="delete-unverified-btn" disabled>
-            Delete Unverified
-        </button>
+                <p class="text-muted mb-0">
+                    Manage registered user accounts
+                </p>
+            </div>
+
+        </div>
+
+
+        {# ================= FLASH MESSAGES ================= #}
+
+        {% for message in app.flashes('success') %}
+
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ message }}
+
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        {% endfor %}
+
+
+        {% for message in app.flashes('error') %}
+
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ message }}
+
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        {% endfor %}
+
+
+        {# ================= USER CARD ================= #}
+
+        <div class="card">
+
+            <div class="card-body">
+
+                {# ================= TOOLBAR ================= #}
+
+                <div class="toolbar mb-3" id="toolbar">
+
+                    <span id="selection-count" class="selection-count">
+                        0 users selected
+                    </span>
+
+
+                    {# BLOCK #}
+
+                    <form method="post" action="{{ path('app_admin_users_block') }}" id="block-form"  data-turbo="false">
+
+                        <input type="hidden" name="_token" value="{{ csrf_token('admin_users_action') }}">
+
+                        <div id="selected-user-inputs"></div>
+
+                        <button type="submit" id="block-btn" class="btn btn-primary" disabled data-bs-toggle="tooltip"
+                            title="Block selected users">
+                            🔒 Block
+                        </button>
+
+                    </form>
+
+
+                    {# UNBLOCK #}
+
+                    <form method="post" action="{{ path('app_admin_users_unblock') }}" id="unblock-form"  data-turbo="false">
+
+                        <input type="hidden" name="_token" value="{{ csrf_token('admin_users_action') }}">
+
+                        <div id="unblock-selected-user-inputs"></div>
+
+                        <button type="submit" id="unblock-btn" class="btn btn-outline-primary" disabled
+                            data-bs-toggle="tooltip" title="Unblock selected users">
+                            🔓 Unblock
+                        </button>
+
+                    </form>
+
+
+                    {# DELETE #}
+
+                    <form method="post" action="{{ path('app_admin_users_delete') }}" id="delete-form" data-turbo="false">
+
+                        <input type="hidden" name="_token" value="{{ csrf_token('admin_users_action') }}">
+
+                        <div id="delete-selected-user-inputs"></div>
+
+                        <button type="submit" id="delete-btn" class="btn btn-outline-danger" disabled
+                            data-bs-toggle="tooltip" title="Permanently delete selected users">
+                            🗑 Delete
+                        </button>
+
+                    </form>
+
+
+                    {# DELETE UNVERIFIED #}
+
+                    <form method="post" action="{{ path('app_admin_users_delete_unverified') }}"
+                        id="delete-unverified-form" data-turbo="false">
+
+                        <input type="hidden" name="_token" value="{{ csrf_token('admin_users_action') }}">
+
+                        <div id="delete-unverified-selected-user-inputs"></div>
+
+                        <button type="submit" id="delete-unverified-btn" class="btn btn-outline-danger" disabled
+                            data-bs-toggle="tooltip" title="Delete selected unverified users">
+                            🧹 Delete Unverified
+                        </button>
+
+                    </form>
+
+                </div>
+
+
+                {# ================= TABLE ================= #}
+
+                <div class="table-responsive">
+
+                    <table class="table table-hover align-middle mb-0" id="users-table">
+
+                        <thead class="table-light">
+
+                            <tr>
+
+                                <th>
+                                    <input type="checkbox" id="select-all">
+                                </th>
+
+                                <th class="sortable" data-column="1">
+                                    ID
+                                    <span class="sort-indicator"></span>
+                                </th>
+
+                                <th class="sortable" data-column="2">
+                                    Name
+                                    <span class="sort-indicator"></span>
+                                </th>
+
+                                <th class="sortable" data-column="3">
+                                    Email
+                                    <span class="sort-indicator"></span>
+                                </th>
+
+                                <th class="sortable" data-column="4">
+                                    Status
+                                    <span class="sort-indicator"></span>
+                                </th>
+
+                                <th class="sortable" data-column="5">
+                                    Last Login
+                                    <span class="sort-indicator"></span>
+                                </th>
+
+                                <th class="sortable" data-column="6">
+                                    Registered
+                                    <span class="sort-indicator"></span>
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            {% for user in users %}
+
+                            <tr class="user-row" data-name="{{ user.firstName }} {{ user.lastName }}"
+                                data-email="{{ user.email }}" data-status="{{ user.status }}">
+
+                                <td>
+
+                                    <input type="checkbox" class="user-checkbox form-check-input" value="{{ user.id }}">
+
+                                </td>
+
+
+
+                                <!-- <td class="text-muted">
+                                    #{{ user.id }}
+                                </td> -->
+
+                                <td class="text-muted" data-sort-value="{{ user.id }}">
+                                    {{ user.id }}
+                                </td>
+
+
+                                <td>
+
+                                    <div class="fw-semibold">
+                                        {{ user.firstName }} {{ user.lastName }}
+                                    </div>
+
+                                </td>
+
+
+                                <td>
+
+                                    <span class="text-break">
+                                        {{ user.email }}
+                                    </span>
+
+                                </td>
+
+
+                                <td>
+
+                                    {% if user.status == 'active' %}
+
+                                    <span class="badge text-bg-success status-badge">
+                                        Active
+                                    </span>
+
+                                    {% elseif user.status == 'blocked' %}
+
+                                    <span class="badge text-bg-danger status-badge">
+                                        Blocked
+                                    </span>
+
+                                    {% elseif user.status == 'unverified' %}
+
+                                    <span class="badge text-bg-warning status-badge">
+                                        Unverified
+                                    </span>
+
+                                    {% else %}
+
+                                    <span class="badge text-bg-secondary status-badge">
+                                        {{ user.status|capitalize }}
+                                    </span>
+
+                                    {% endif %}
+
+                                </td>
+
+
+                                <td>
+
+                                    {% if user.lastLoginAt %}
+
+                                    <span data-bs-toggle="tooltip" title="{{ user.lastLoginAt|date('Y-m-d H:i:s') }}">
+                                        {{ user.lastLoginAt|date('Y-m-d H:i') }}
+                                    </span>
+
+                                    {% else %}
+
+                                    <span class="text-muted">
+                                        Never
+                                    </span>
+
+                                    {% endif %}
+
+                                </td>
+
+
+                                <td>
+
+                                    <span data-bs-toggle="tooltip" title="{{ user.createdAt|date('Y-m-d H:i:s') }}">
+                                        {{ user.createdAt|date('Y-m-d H:i') }}
+                                    </span>
+
+                                </td>
+
+                            </tr>
+
+                            {% else %}
+
+                            <tr>
+
+                                <td colspan="7" class="text-center text-muted py-5">
+                                    No users found.
+                                </td>
+
+                            </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
 
     </div>
-    {% for message in app.flashes('success') %}
-    <div class="flash-success">
-        {{ message }}
-    </div>
-    {% endfor %}
-
-    {% for message in app.flashes('error') %}
-    <div class="flash-error">
-        {{ message }}
-    </div>
-    {% endfor %}
 
 
-    {# ==================== USER TABLE ==================== #}
 
-    <table border="1" cellpadding="10" cellspacing="0">
-
-        <thead>
-            <tr>
-
-                <th>
-                    <input type="checkbox" id="select-all">
-                </th>
-
-                <th>ID</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Status</th>
-                <th>Last Login</th>
-                <th>Registered</th>
-
-            </tr>
-        </thead>
-
-        <tbody>
-
-            {% for user in users %}
-
-            <tr>
-
-                <td>
-                    <input type="checkbox" class="user-checkbox" value="{{ user.id }}">
-                </td>
-
-                <td>
-                    {{ user.id }}
-                </td>
-
-                <td>
-                    {{ user.firstName }} {{ user.lastName }}
-                </td>
-
-                <td>
-                    {{ user.email }}
-                </td>
-
-                <td>
-                    {{ user.status }}
-                </td>
-
-                <td>
-
-                    {% if user.lastLoginAt %}
-
-                    {{ user.lastLoginAt|date('Y-m-d H:i:s') }}
-
-                    {% else %}
-
-                    Never
-
-                    {% endif %}
-
-                </td>
-
-                <td>
-                    {{ user.createdAt|date('Y-m-d H:i:s') }}
-                </td>
-
-            </tr>
-
-            {% else %}
-
-            <tr>
-
-                <td colspan="7">
-                    No users found.
-                </td>
-
-            </tr>
-
-            {% endfor %}
-
-        </tbody>
-
-    </table>
-
-</div>
+    {# ================= CSS ================= #}
 
 
-{# ==================== JAVASCRIPT ==================== #}
 
-<script>
+    <style>
+        #user-filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
 
-    // Header "Select All" checkbox
-    const selectAll = document.getElementById('select-all');
+        #user-search {
+            width: 300px;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
 
-    // All individual user checkboxes
-    const userCheckboxes = document.querySelectorAll('.user-checkbox');
+        #status-filter {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+        }
 
-    // Selection counter
-    const selectionCount = document.getElementById('selection-count');
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+        }
 
-    // Toolbar buttons
-    const blockButton = document.getElementById('block-btn');
-    const unblockButton = document.getElementById('unblock-btn');
-    const deleteButton = document.getElementById('delete-btn');
-    const deleteUnverifiedButton = document.getElementById('delete-unverified-btn');
-    const blockForm = document.getElementById('block-form');
-    const selectedUserInputs = document.getElementById('selected-user-inputs');
-    const unblockForm = document.getElementById('unblock-form');
-    const unblockSelectedUserInputs =
-        document.getElementById('unblock-selected-user-inputs');
+        .sortable:hover {
+            background: #f5f5f5;
+        }
+
+        .sort-indicator {
+            font-weight: bold;
+            margin-left: 4px;
+        }
+    </style>
 
 
-    // Update the toolbar according to the current selection
-    function updateSelection() {
 
-        const selected = document.querySelectorAll(
-            '.user-checkbox:checked'
-        );
+    {# ================= JAVASCRIPT ================= #}
 
-        const count = selected.length;
+    <script>
 
-        selectionCount.textContent =
-            count +
-            (count === 1
-                ? ' user selected'
-                : ' users selected'
+        document.addEventListener('DOMContentLoaded', function () {
+
+            const selectAll = document.getElementById('select-all');
+
+            const userCheckboxes =
+                document.querySelectorAll('.user-checkbox');
+
+            const selectionCount =
+                document.getElementById('selection-count');
+
+            const blockButton =
+                document.getElementById('block-btn');
+
+            const unblockButton =
+                document.getElementById('unblock-btn');
+
+            const deleteButton =
+                document.getElementById('delete-btn');
+
+            const deleteUnverifiedButton =
+                document.getElementById('delete-unverified-btn');
+
+            const selectedUserInputs =
+                document.getElementById('selected-user-inputs');
+
+            const unblockSelectedUserInputs =
+                document.getElementById('unblock-selected-user-inputs');
+
+            const deleteSelectedUserInputs =
+                document.getElementById('delete-selected-user-inputs');
+
+            const deleteUnverifiedSelectedUserInputs =
+                document.getElementById(
+                    'delete-unverified-selected-user-inputs'
+                );
+
+
+            function updateSelection() {
+
+                const selected =
+                    document.querySelectorAll(
+                        '.user-checkbox:checked'
+                    );
+
+                const count = selected.length;
+
+                selectionCount.textContent =
+                    count === 1
+                        ? '1 user selected'
+                        : count + ' users selected';
+
+
+                selectAll.checked =
+                    count > 0 &&
+                    count === userCheckboxes.length;
+
+                selectAll.indeterminate =
+                    count > 0 &&
+                    count < userCheckboxes.length;
+
+
+                const hasSelection = count > 0;
+
+                blockButton.disabled =
+                    !hasSelection;
+
+                unblockButton.disabled =
+                    !hasSelection;
+
+                deleteButton.disabled =
+                    !hasSelection;
+
+                deleteUnverifiedButton.disabled =
+                    !hasSelection;
+
+
+                selectedUserInputs.innerHTML = '';
+
+                unblockSelectedUserInputs.innerHTML = '';
+
+                deleteSelectedUserInputs.innerHTML = '';
+
+                deleteUnverifiedSelectedUserInputs.innerHTML = '';
+
+
+                selected.forEach(function (checkbox) {
+
+                    const input =
+                        document.createElement('input');
+
+                    input.type = 'hidden';
+
+                    input.name = 'user_ids[]';
+
+                    input.value = checkbox.value;
+
+
+                    selectedUserInputs.appendChild(
+                        input.cloneNode(true)
+                    );
+
+                    unblockSelectedUserInputs.appendChild(
+                        input.cloneNode(true)
+                    );
+
+                    deleteSelectedUserInputs.appendChild(
+                        input.cloneNode(true)
+                    );
+
+                    deleteUnverifiedSelectedUserInputs.appendChild(
+                        input.cloneNode(true)
+                    );
+
+                });
+
+            }
+
+
+            selectAll.addEventListener(
+                'change',
+                function () {
+
+                    userCheckboxes.forEach(
+                        function (checkbox) {
+
+                            checkbox.checked =
+                                selectAll.checked;
+
+                        }
+                    );
+
+                    updateSelection();
+
+                }
             );
 
-        selectAll.checked =
-            count > 0 &&
-            count === userCheckboxes.length;
 
-        selectAll.indeterminate =
-            count > 0 &&
-            count < userCheckboxes.length;
+            userCheckboxes.forEach(
+                function (checkbox) {
 
-        const hasSelection = count > 0;
+                    checkbox.addEventListener(
+                        'change',
+                        updateSelection
+                    );
 
-        blockButton.disabled = !hasSelection;
-        unblockButton.disabled = !hasSelection;
-        deleteButton.disabled = !hasSelection;
-        deleteUnverifiedButton.disabled = !hasSelection;
+                }
+            );
 
-
-        /*
-        * Rebuild hidden inputs containing selected user IDs.
-        */
-
-        selectedUserInputs.innerHTML = '';
-
-        selected.forEach(function (checkbox) {
-
-            const input = document.createElement('input');
-
-            input.type = 'hidden';
-            input.name = 'user_ids[]';
-            input.value = checkbox.value;
-
-            selectedUserInputs.appendChild(input);
-        });
-
-
-        unblockSelectedUserInputs.innerHTML = '';
-
-        selected.forEach(function (checkbox) {
-
-            const input = document.createElement('input');
-
-            input.type = 'hidden';
-            input.name = 'user_ids[]';
-            input.value = checkbox.value;
-
-            unblockSelectedUserInputs.appendChild(input);
-        });
-
-
-    }
-
-
-    // Select all / deselect all
-    selectAll.addEventListener('change', function () {
-
-        userCheckboxes.forEach(function (checkbox) {
-
-            checkbox.checked = selectAll.checked;
-
-        });
-
-        updateSelection();
-    });
-
-
-    // Individual checkbox changes
-    userCheckboxes.forEach(function (checkbox) {
-
-        checkbox.addEventListener('change', function () {
 
             updateSelection();
 
+            // ============================================================
+            // SEARCH
+            // ============================================================
+
+            const userSearch = document.getElementById('user-search');
+
+            userSearch.addEventListener('input', function () {
+
+                const searchText = this.value.toLowerCase().trim();
+
+                filterUsers(searchText);
+
+            });
+
+
+            // ============================================================
+            // STATUS FILTER
+            // ============================================================
+
+            const statusFilter = document.getElementById('status-filter');
+
+            statusFilter.addEventListener('change', function () {
+
+                const searchText = userSearch.value.toLowerCase().trim();
+
+                filterUsers(searchText);
+
+            });
+
+
+            // ============================================================
+            // FILTER USERS
+            // ============================================================
+
+            function filterUsers(searchText) {
+
+                const selectedStatus = statusFilter.value;
+
+                const rows = document.querySelectorAll('.user-row');
+
+                rows.forEach(function (row) {
+
+                    const name = row.dataset.name.toLowerCase();
+                    const email = row.dataset.email.toLowerCase();
+                    const status = row.dataset.status.toLowerCase();
+
+                    const matchesSearch =
+                        name.includes(searchText) ||
+                        email.includes(searchText);
+
+                    const matchesStatus =
+                        selectedStatus === 'all' ||
+                        status === selectedStatus;
+
+                    if (matchesSearch && matchesStatus) {
+
+                        row.style.display = '';
+
+                    } else {
+
+                        row.style.display = 'none';
+
+                    }
+
+                });
+
+            }
+
+
+            // ============================================================
+            // COLUMN SORTING
+            // ============================================================
+
+            const sortableHeaders =
+                document.querySelectorAll('.sortable');
+
+            let currentSortColumn = null;
+            let currentSortDirection = 'asc';
+
+
+            sortableHeaders.forEach(function (header) {
+
+                header.addEventListener('click', function () {
+
+                    const columnIndex =
+                        parseInt(this.dataset.column);
+
+                    if (currentSortColumn === columnIndex) {
+
+                        currentSortDirection =
+                            currentSortDirection === 'asc'
+                                ? 'desc'
+                                : 'asc';
+
+                    } else {
+
+                        currentSortColumn = columnIndex;
+                        currentSortDirection = 'asc';
+
+                    }
+
+                    sortTable(
+                        columnIndex,
+                        currentSortDirection
+                    );
+
+                    updateSortIndicators(
+                        this,
+                        currentSortDirection
+                    );
+
+                });
+
+            });
+
+
+            // ============================================================
+            // SORT TABLE
+            // ============================================================
+
+            function sortTable(columnIndex, direction) {
+
+                const table =
+                    document.getElementById('users-table');
+
+                const tbody =
+                    table.querySelector('tbody');
+
+                const rows =
+                    Array.from(
+                        tbody.querySelectorAll('.user-row')
+                    );
+
+                rows.sort(function (rowA, rowB) {
+
+                    const valueA =
+                        rowA.children[columnIndex].textContent
+                            .trim()
+                            .toLowerCase();
+
+                    const valueB =
+                        rowB.children[columnIndex].textContent
+                            .trim()
+                            .toLowerCase();
+
+
+                    // ID column
+
+                    if (columnIndex === 1) {
+
+                        return direction === 'asc'
+                            ? Number(valueA) - Number(valueB)
+                            : Number(valueB) - Number(valueA);
+
+                    }
+
+
+                    // Last Login column
+
+                    if (columnIndex === 5) {
+
+                        if (valueA === 'never') {
+                            return 1;
+                        }
+
+                        if (valueB === 'never') {
+                            return -1;
+                        }
+
+                        const dateA =
+                            new Date(valueA).getTime();
+
+                        const dateB =
+                            new Date(valueB).getTime();
+
+                        return direction === 'asc'
+                            ? dateA - dateB
+                            : dateB - dateA;
+
+                    }
+
+
+                    // Registered column
+
+                    if (columnIndex === 6) {
+
+                        const dateA =
+                            new Date(valueA).getTime();
+
+                        const dateB =
+                            new Date(valueB).getTime();
+
+                        return direction === 'asc'
+                            ? dateA - dateB
+                            : dateB - dateA;
+
+                    }
+
+
+                    // Normal text sorting
+
+                    if (valueA < valueB) {
+
+                        return direction === 'asc'
+                            ? -1
+                            : 1;
+
+                    }
+
+                    if (valueA > valueB) {
+
+                        return direction === 'asc'
+                            ? 1
+                            : -1;
+
+                    }
+
+                    return 0;
+
+                });
+
+
+                rows.forEach(function (row) {
+
+                    tbody.appendChild(row);
+
+                });
+
+            }
+
+
+            // ============================================================
+            // SORT INDICATORS
+            // ============================================================
+
+            function updateSortIndicators(activeHeader, direction) {
+
+                sortableHeaders.forEach(function (header) {
+
+                    const indicator =
+                        header.querySelector('.sort-indicator');
+
+                    indicator.textContent = '';
+
+                });
+
+
+                const indicator =
+                    activeHeader.querySelector('.sort-indicator');
+
+
+                if (direction === 'asc') {
+
+                    indicator.textContent = ' ↑';
+
+                } else {
+
+                    indicator.textContent = ' ↓';
+
+                }
+
+            }
+
+
+            /*
+             * Bootstrap tooltips
+             */
+
+            const tooltipTriggerList =
+                document.querySelectorAll(
+                    '[data-bs-toggle="tooltip"]'
+                );
+
+            [...tooltipTriggerList].map(
+                tooltipTriggerEl =>
+                    new bootstrap.Tooltip(
+                        tooltipTriggerEl
+                    )
+            );
+
+
+            /*
+             * Confirmation dialogs using Bootstrap modal
+             */
+
+            document.querySelectorAll(
+                '#delete-form, #delete-unverified-form'
+            ).forEach(function (form) {
+
+                form.addEventListener(
+                    'submit',
+                    function (event) {
+
+                        const message =
+                            form.id === 'delete-form'
+                                ? 'Are you sure you want to permanently delete the selected users?'
+                                : 'Delete the selected unverified users permanently?';
+
+                        if (!window.confirm(message)) {
+                            event.preventDefault();
+                        }
+
+                    }
+                );
+
+            });
+
         });
 
-    });
+    </script>
 
-
-    // Initial state
-    updateSelection();
-
-</script>
-
-{% endblock %}
+    {% endblock %}
