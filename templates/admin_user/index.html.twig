@@ -85,7 +85,7 @@
 
                     {# BLOCK #}
 
-                    <form method="post" action="{{ path('app_admin_users_block') }}" id="block-form"  data-turbo="false">
+                    <form method="post" action="{{ path('app_admin_users_block') }}" id="block-form" data-turbo="false">
 
                         <input type="hidden" name="_token" value="{{ csrf_token('admin_users_action') }}">
 
@@ -101,7 +101,8 @@
 
                     {# UNBLOCK #}
 
-                    <form method="post" action="{{ path('app_admin_users_unblock') }}" id="unblock-form"  data-turbo="false">
+                    <form method="post" action="{{ path('app_admin_users_unblock') }}" id="unblock-form"
+                        data-turbo="false">
 
                         <input type="hidden" name="_token" value="{{ csrf_token('admin_users_action') }}">
 
@@ -117,7 +118,8 @@
 
                     {# DELETE #}
 
-                    <form method="post" action="{{ path('app_admin_users_delete') }}" id="delete-form" data-turbo="false">
+                    <form method="post" action="{{ path('app_admin_users_delete') }}" id="delete-form"
+                        data-turbo="false">
 
                         <input type="hidden" name="_token" value="{{ csrf_token('admin_users_action') }}">
 
@@ -194,6 +196,10 @@
                                     <span class="sort-indicator"></span>
                                 </th>
 
+                                <th data-column="7">
+                                    Activity
+                                </th>
+
                             </tr>
 
                         </thead>
@@ -202,6 +208,26 @@
                         <tbody>
 
                             {% for user in users %}
+
+                            {# ==================== Activity Data ==================== #}
+
+                            {% set activityData = [] %}
+
+                            {% for dayOffset in 6..0 %}
+                            {% set targetDate = date('-' ~ dayOffset ~ ' days')|date('Y-m-d') %}
+                            {% set hasActivity = false %}
+
+                            {% for activity in user.userActivities %}
+                            {% if activity.activityType == 'LOGIN'
+                            and activity.createdAt|date('Y-m-d') == targetDate %}
+                            {% set hasActivity = true %}
+                            {% endif %}
+                            {% endfor %}
+
+                            {% set activityData = activityData|merge([hasActivity ? 1 : 0]) %}
+                            {% endfor %}
+
+
 
                             <tr class="user-row" data-name="{{ user.firstName }} {{ user.lastName }}"
                                 data-email="{{ user.email }}" data-status="{{ user.status }}">
@@ -299,6 +325,12 @@
 
                                 </td>
 
+                                <td>
+                                    <div class="activity-sparkline" data-activity="{{ activityData|join(',') }}"
+                                        title="Login activity over the last 7 days">
+                                    </div>
+                                </td>
+
                             </tr>
 
                             {% else %}
@@ -366,6 +398,26 @@
         .sort-indicator {
             font-weight: bold;
             margin-left: 4px;
+        }
+
+        .activity-sparkline {
+            display: flex;
+            align-items: flex-end;
+            gap: 3px;
+            height: 24px;
+            width: 55px;
+        }
+
+        .activity-bar {
+            width: 5px;
+            height: 6px;
+            background: #d1d5db;
+            border-radius: 2px;
+        }
+
+        .activity-bar.active {
+            height: 20px;
+            background: #2563eb;
         }
     </style>
 
@@ -833,6 +885,26 @@
 
             });
 
+        });
+
+        document.querySelectorAll('.activity-sparkline').forEach(function (element) {
+
+            const values = element.dataset.activity
+                .split(',')
+                .map(Number);
+
+            values.forEach(function (value) {
+
+                const bar = document.createElement('span');
+
+                bar.classList.add('activity-bar');
+
+                if (value === 1) {
+                    bar.classList.add('active');
+                }
+
+                element.appendChild(bar);
+            });
         });
 
     </script>

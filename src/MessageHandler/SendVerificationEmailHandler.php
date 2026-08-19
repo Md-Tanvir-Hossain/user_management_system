@@ -48,7 +48,7 @@ final class SendVerificationEmailHandler
         );
 
         $email = (new TemplatedEmail())
-            ->from('no-reply@example.com')
+            ->from($this->mailerFrom)
             ->to($user->getEmail())
             ->subject('Verify your email address')
             ->htmlTemplate('emails/verification.html.twig')

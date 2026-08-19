@@ -1,25 +1,220 @@
+
 {% extends 'base.html.twig' %}
 
-{% block title %}Register{% endblock %}
+{% block title %}Create Account{% endblock %}
+
+{% block stylesheets %}
+    <style>
+        .registration-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            background: #f5f7fa;
+        }
+
+        .registration-card {
+            width: 100%;
+            max-width: 480px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 36px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+        }
+
+        .registration-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .registration-header h1 {
+            margin: 0 0 8px;
+            font-size: 28px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .registration-header p {
+            margin: 0;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 7px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .form-control {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 11px 13px;
+            border: 1px solid #d1d5db;
+            border-radius: 7px;
+            background: #ffffff;
+            color: #111827;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .form-control:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        .form-error {
+            margin-top: 5px;
+            color: #dc2626;
+            font-size: 13px;
+        }
+
+        .registration-button {
+            width: 100%;
+            margin-top: 8px;
+            padding: 12px;
+            border: none;
+            border-radius: 7px;
+            background: #2563eb;
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .registration-button:hover {
+            background: #1d4ed8;
+        }
+
+        .registration-footer {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .registration-footer a {
+            color: #2563eb;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .registration-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .password-help {
+            margin-top: 5px;
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        @media (max-width: 520px) {
+            .registration-page {
+                padding: 20px 12px;
+            }
+
+            .registration-card {
+                padding: 26px 20px;
+            }
+
+            .registration-header h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+{% endblock %}
 
 {% block body %}
-    <h1>Create an account</h1>
+<div class="registration-page">
 
-    {{ form_start(registrationForm) }}
+    <div class="registration-card">
 
-        {{ form_row(registrationForm.firstName) }}
-        {{ form_row(registrationForm.lastName) }}
-        {{ form_row(registrationForm.email) }}
-        {{ form_row(registrationForm.password) }}
+        <div class="registration-header">
+            <h1>Create your account</h1>
+            <p>Register to access the user management system.</p>
+        </div>
 
-        <button type="submit">
-            Register
-        </button>
+        {{ form_start(registrationForm) }}
 
-    {{ form_end(registrationForm) }}
+            <div class="form-group">
+                {{ form_label(registrationForm.email) }}
+                {{ form_widget(registrationForm.email, {
+                    attr: {
+                        class: 'form-control',
+                        placeholder: 'Enter your email address',
+                        autocomplete: 'email'
+                    }
+                }) }}
+                {{ form_errors(registrationForm.email) }}
+            </div>
 
-    <p>
-        Already have an account?
-        <a href="{{ path('app_login') }}">Log in</a>
-    </p>
+            <div class="form-group">
+                {{ form_label(registrationForm.password) }}
+                {{ form_widget(registrationForm.password, {
+                    attr: {
+                        class: 'form-control',
+                        placeholder: 'Create a password',
+                        autocomplete: 'new-password'
+                    }
+                }) }}
+                {{ form_errors(registrationForm.password) }}
+
+                <div class="password-help">
+                    Use a strong password that you do not use elsewhere.
+                </div>
+            </div>
+
+            <div class="form-group">
+                {{ form_label(registrationForm.firstName) }}
+                {{ form_widget(registrationForm.firstName, {
+                    attr: {
+                        class: 'form-control',
+                        placeholder: 'Enter your first name',
+                        autocomplete: 'given-name'
+                    }
+                }) }}
+                {{ form_errors(registrationForm.firstName) }}
+            </div>
+
+            <div class="form-group">
+                {{ form_label(registrationForm.lastName) }}
+                {{ form_widget(registrationForm.lastName, {
+                    attr: {
+                        class: 'form-control',
+                        placeholder: 'Enter your last name',
+                        autocomplete: 'family-name'
+                    }
+                }) }}
+                {{ form_errors(registrationForm.lastName) }}
+            </div>
+
+            {{ form_rest(registrationForm) }}
+
+            <button type="submit" class="registration-button">
+                Create Account
+            </button>
+
+        {{ form_end(registrationForm, { render_rest: false }) }}
+
+        <div class="registration-footer">
+            Already have an account?
+            <a href="{{ path('app_login') }}">Sign in</a>
+        </div>
+
+    </div>
+
+</div>
 {% endblock %}
+
