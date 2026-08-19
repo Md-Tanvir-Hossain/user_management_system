@@ -1,30 +1,291 @@
 {% extends 'base.html.twig' %}
-{% block title %}Hello HomeController!{% endblock %}
-{% block body %}
-<style>
-    .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
-    .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
-</style>
-<div class="example-wrapper">
-    {% if app.user %}
-        <div class="mb-3">
-            You are logged in as <strong>{{ app.user.userIdentifier }}</strong>.
-            <form method="post" action="{{ path('app_logout') }}" style="display:inline">
-                <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
-                <button type="submit" class="btn btn-link p-0">Logout</button>
-            </form>
-        </div>
-    {% else %}
-        <div class="mb-3">
-            <a href="{{ path('app_login') }}">Log in</a>
-        </div>
-    {% endif %}
 
-    <h1>Hello {{ controller_name }}! ✅</h1>
-    This friendly message is coming from:
-    <ul>
-        <li>Your controller at <code>src/Controller/HomeController.php</code></li>
-        <li>Your template at <code>templates/home/index.html.twig</code></li>
-    </ul>
+{% block title %}User Management System{% endblock %}
+
+{% block stylesheets %}
+<style>
+    .home-page {
+        min-height: 100vh;
+        background: #f5f7fa;
+        color: #111827;
+    }
+
+    .home-nav {
+        height: 72px;
+        background: #ffffff;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 6%;
+    }
+
+    .brand {
+        font-size: 20px;
+        font-weight: 700;
+        color: #111827;
+        text-decoration: none;
+    }
+
+    .nav-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .nav-link {
+        padding: 9px 16px;
+        border-radius: 7px;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .login-link {
+        color: #374151;
+    }
+
+    .register-link {
+        background: #2563eb;
+        color: #ffffff;
+    }
+
+    .register-link:hover {
+        background: #1d4ed8;
+    }
+
+    .hero {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 110px 24px 90px;
+        text-align: center;
+    }
+
+    .hero-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        margin-bottom: 20px;
+        border-radius: 20px;
+        background: #eff6ff;
+        color: #2563eb;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .hero h1 {
+        max-width: 800px;
+        margin: 0 auto 20px;
+        font-size: 48px;
+        line-height: 1.15;
+        font-weight: 750;
+        letter-spacing: -1px;
+    }
+
+    .hero p {
+        max-width: 650px;
+        margin: 0 auto 32px;
+        color: #6b7280;
+        font-size: 17px;
+        line-height: 1.7;
+    }
+
+    .hero-actions {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+    }
+
+    .primary-button,
+    .secondary-button {
+        padding: 12px 22px;
+        border-radius: 7px;
+        text-decoration: none;
+        font-size: 15px;
+        font-weight: 600;
+    }
+
+    .primary-button {
+        background: #2563eb;
+        color: #ffffff;
+    }
+
+    .primary-button:hover {
+        background: #1d4ed8;
+    }
+
+    .secondary-button {
+        background: #ffffff;
+        color: #374151;
+        border: 1px solid #d1d5db;
+    }
+
+    .features {
+        max-width: 1050px;
+        margin: 0 auto;
+        padding: 0 24px 80px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+    }
+
+    .feature-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 28px;
+    }
+
+    .feature-card h3 {
+        margin: 0 0 10px;
+        font-size: 17px;
+    }
+
+    .feature-card p {
+        margin: 0;
+        color: #6b7280;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    .logged-in {
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 14px 20px;
+        border: 1px solid #dbeafe;
+        border-radius: 8px;
+        background: #eff6ff;
+        color: #1e40af;
+        font-size: 14px;
+    }
+
+    .logged-in a {
+        color: #1d4ed8;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    @media (max-width: 700px) {
+        .home-nav {
+            padding: 0 20px;
+        }
+
+        .hero {
+            padding-top: 70px;
+        }
+
+        .hero h1 {
+            font-size: 36px;
+        }
+
+        .hero-actions {
+            flex-direction: column;
+        }
+
+        .features {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="home-page">
+
+    <header class="home-nav">
+        <a href="{{ path('app_home') }}" class="brand">
+            User Management System
+        </a>
+
+        <nav class="nav-actions">
+            {% if app.user %}
+                <a href="{{ path('app_admin_users') }}" class="nav-link register-link">
+                    User Management
+                </a>
+            {% else %}
+                <a href="{{ path('app_login') }}" class="nav-link login-link">
+                    Sign in
+                </a>
+
+                <a href="{{ path('app_registration') }}" class="nav-link register-link">
+                    Register
+                </a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main>
+
+        <section class="hero">
+
+            <span class="hero-badge">
+                Secure User Management
+            </span>
+
+            <h1>
+                Simple and secure user management
+            </h1>
+
+            <p>
+                Manage user accounts, authentication, verification,
+                account status, and activity from one centralized system.
+            </p>
+
+            {% if app.user %}
+
+                <div class="logged-in">
+                    You are signed in as
+                    <strong>{{ app.user.userIdentifier }}</strong>.
+                    <a href="{{ path('app_admin_users') }}">
+                        Go to User Management →
+                    </a>
+                </div>
+
+            {% else %}
+
+                <div class="hero-actions">
+                    <a href="{{ path('app_login') }}" class="primary-button">
+                        Sign in
+                    </a>
+
+                    <a href="{{ path('app_registration') }}" class="secondary-button">
+                        Create an account
+                    </a>
+                </div>
+
+            {% endif %}
+
+        </section>
+
+        <section class="features">
+
+            <div class="feature-card">
+                <h3>Secure Authentication</h3>
+                <p>
+                    Password hashing, email verification and
+                    account-state security protect user accounts.
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <h3>User Management</h3>
+                <p>
+                    Administrators can manage accounts, block,
+                    unblock and permanently delete users.
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <h3>Activity Tracking</h3>
+                <p>
+                    User activity can be recorded and used to
+                    provide useful account activity information.
+                </p>
+            </div>
+
+        </section>
+
+    </main>
+
 </div>
 {% endblock %}
+
