@@ -14,4 +14,4 @@ RUN php bin/console cache:clear --env=prod
 
 EXPOSE 80
 
-CMD ["frankenphp", "run", "--config", "/app/Caddyfile"]
+CMD ["frankenphp", "run", "--config", "/app/Caddyfile", "--no-caps"]
