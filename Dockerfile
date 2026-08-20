@@ -1,10 +1,17 @@
-FROM dunglas/frankenphp:php8.4-bookworm
+FROM php:8.4-cli-bookworm
 
-RUN install-php-extensions \
+RUN apt-get update && apt-get install -y \
+    git \
+    unzip \
+    libpq-dev \
+    libicu-dev \
+    libzip-dev \
+    && docker-php-ext-install \
     pdo_pgsql \
     intl \
+    zip \
     opcache \
-    zip
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -21,3 +28,5 @@ RUN composer install \
 RUN php bin/console cache:clear --env=prod
 
 EXPOSE 80
+
+CMD ["sh", "-c", "php -S 0.0.0.0:${PORT:-80} -t public"]
