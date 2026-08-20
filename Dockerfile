@@ -10,7 +10,6 @@ COPY . .
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
-RUN php bin/console asset-map:compile --env=prod
 RUN php bin/console cache:clear --env=prod
 
 EXPOSE 80
