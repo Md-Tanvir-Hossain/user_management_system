@@ -1,0 +1,10 @@
+.git
+.github
+.env.local
+.env.*.local
+var/
+vendor/
+node_modules/
+.idea/
+.vscode/
+.DS_Store
