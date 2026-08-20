@@ -14,4 +14,6 @@ RUN php bin/console cache:clear --env=prod
 
 EXPOSE 80
 
+ENTRYPOINT []
+
 CMD ["frankenphp", "run", "--config", "/app/Caddyfile", "--no-caps"]
