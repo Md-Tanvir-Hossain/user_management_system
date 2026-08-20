@@ -29,4 +29,6 @@ RUN php bin/console cache:clear --env=prod
 
 EXPOSE 8000
 
+ENTRYPOINT []
+
 CMD ["frankenphp", "run", "--config", "/app/Caddyfile"]
