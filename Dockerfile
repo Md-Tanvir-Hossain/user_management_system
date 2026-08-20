@@ -16,4 +16,4 @@ EXPOSE 80
 
 ENTRYPOINT []
 
-CMD ["frankenphp", "run", "--config", "/app/Caddyfile", "--no-caps"]
+CMD ["/usr/local/bin/frankenphp", "run", "--config", "/app/Caddyfile", "--no-caps"]
