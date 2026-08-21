@@ -26,7 +26,6 @@ RUN composer install \
     --no-scripts
 
 RUN APP_SECRET=build-secret \
-    DEFAULT_URI=http://127.0.0.1 \
     APP_DEFAULT_URI=http://127.0.0.1 \
     php bin/console cache:clear --env=prod
 
