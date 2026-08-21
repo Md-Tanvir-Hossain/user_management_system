@@ -421,4 +421,492 @@
         }
     </style>
 
+
+
+    {# ================= JAVASCRIPT ================= #}
+
+    <script>
+
+        document.addEventListener('DOMContentLoaded', function () {
+
+            const selectAll = document.getElementById('select-all');
+
+            const userCheckboxes =
+                document.querySelectorAll('.user-checkbox');
+
+            const selectionCount =
+                document.getElementById('selection-count');
+
+            const blockButton =
+                document.getElementById('block-btn');
+
+            const unblockButton =
+                document.getElementById('unblock-btn');
+
+            const deleteButton =
+                document.getElementById('delete-btn');
+
+            const deleteUnverifiedButton =
+                document.getElementById('delete-unverified-btn');
+
+            const selectedUserInputs =
+                document.getElementById('selected-user-inputs');
+
+            const unblockSelectedUserInputs =
+                document.getElementById('unblock-selected-user-inputs');
+
+            const deleteSelectedUserInputs =
+                document.getElementById('delete-selected-user-inputs');
+
+            const deleteUnverifiedSelectedUserInputs =
+                document.getElementById(
+                    'delete-unverified-selected-user-inputs'
+                );
+
+
+            function updateSelection() {
+
+                const selected =
+                    document.querySelectorAll(
+                        '.user-checkbox:checked'
+                    );
+
+                const count = selected.length;
+
+                selectionCount.textContent =
+                    count === 1
+                        ? '1 user selected'
+                        : count + ' users selected';
+
+
+                selectAll.checked =
+                    count > 0 &&
+                    count === userCheckboxes.length;
+
+                selectAll.indeterminate =
+                    count > 0 &&
+                    count < userCheckboxes.length;
+
+
+                const hasSelection = count > 0;
+
+                blockButton.disabled =
+                    !hasSelection;
+
+                unblockButton.disabled =
+                    !hasSelection;
+
+                deleteButton.disabled =
+                    !hasSelection;
+
+                deleteUnverifiedButton.disabled =
+                    !hasSelection;
+
+
+                selectedUserInputs.innerHTML = '';
+
+                unblockSelectedUserInputs.innerHTML = '';
+
+                deleteSelectedUserInputs.innerHTML = '';
+
+                deleteUnverifiedSelectedUserInputs.innerHTML = '';
+
+
+                selected.forEach(function (checkbox) {
+
+                    const input =
+                        document.createElement('input');
+
+                    input.type = 'hidden';
+
+                    input.name = 'user_ids[]';
+
+                    input.value = checkbox.value;
+
+
+                    selectedUserInputs.appendChild(
+                        input.cloneNode(true)
+                    );
+
+                    unblockSelectedUserInputs.appendChild(
+                        input.cloneNode(true)
+                    );
+
+                    deleteSelectedUserInputs.appendChild(
+                        input.cloneNode(true)
+                    );
+
+                    deleteUnverifiedSelectedUserInputs.appendChild(
+                        input.cloneNode(true)
+                    );
+
+                });
+
+            }
+
+
+            selectAll.addEventListener(
+                'change',
+                function () {
+
+                    userCheckboxes.forEach(
+                        function (checkbox) {
+
+                            checkbox.checked =
+                                selectAll.checked;
+
+                        }
+                    );
+
+                    updateSelection();
+
+                }
+            );
+
+
+            userCheckboxes.forEach(
+                function (checkbox) {
+
+                    checkbox.addEventListener(
+                        'change',
+                        updateSelection
+                    );
+
+                }
+            );
+
+
+            updateSelection();
+
+            // ============================================================
+            // SEARCH
+            // ============================================================
+
+            const userSearch = document.getElementById('user-search');
+
+            userSearch.addEventListener('input', function () {
+
+                const searchText = this.value.toLowerCase().trim();
+
+                filterUsers(searchText);
+
+            });
+
+
+            // ============================================================
+            // STATUS FILTER
+            // ============================================================
+
+            const statusFilter = document.getElementById('status-filter');
+
+            statusFilter.addEventListener('change', function () {
+
+                const searchText = userSearch.value.toLowerCase().trim();
+
+                filterUsers(searchText);
+
+            });
+
+
+            // ============================================================
+            // FILTER USERS
+            // ============================================================
+
+            function filterUsers(searchText) {
+
+                const selectedStatus = statusFilter.value;
+
+                const rows = document.querySelectorAll('.user-row');
+
+                rows.forEach(function (row) {
+
+                    const name = row.dataset.name.toLowerCase();
+                    const email = row.dataset.email.toLowerCase();
+                    const status = row.dataset.status.toLowerCase();
+
+                    const matchesSearch =
+                        name.includes(searchText) ||
+                        email.includes(searchText);
+
+                    const matchesStatus =
+                        selectedStatus === 'all' ||
+                        status === selectedStatus;
+
+                    if (matchesSearch && matchesStatus) {
+
+                        row.style.display = '';
+
+                    } else {
+
+                        row.style.display = 'none';
+
+                    }
+
+                });
+
+            }
+
+
+            // ============================================================
+            // COLUMN SORTING
+            // ============================================================
+
+            const sortableHeaders =
+                document.querySelectorAll('.sortable');
+
+            let currentSortColumn = null;
+            let currentSortDirection = 'asc';
+
+
+            sortableHeaders.forEach(function (header) {
+
+                header.addEventListener('click', function () {
+
+                    const columnIndex =
+                        parseInt(this.dataset.column);
+
+                    if (currentSortColumn === columnIndex) {
+
+                        currentSortDirection =
+                            currentSortDirection === 'asc'
+                                ? 'desc'
+                                : 'asc';
+
+                    } else {
+
+                        currentSortColumn = columnIndex;
+                        currentSortDirection = 'asc';
+
+                    }
+
+                    sortTable(
+                        columnIndex,
+                        currentSortDirection
+                    );
+
+                    updateSortIndicators(
+                        this,
+                        currentSortDirection
+                    );
+
+                });
+
+            });
+
+
+            // ============================================================
+            // SORT TABLE
+            // ============================================================
+
+            function sortTable(columnIndex, direction) {
+
+                const table =
+                    document.getElementById('users-table');
+
+                const tbody =
+                    table.querySelector('tbody');
+
+                const rows =
+                    Array.from(
+                        tbody.querySelectorAll('.user-row')
+                    );
+
+                rows.sort(function (rowA, rowB) {
+
+                    const valueA =
+                        rowA.children[columnIndex].textContent
+                            .trim()
+                            .toLowerCase();
+
+                    const valueB =
+                        rowB.children[columnIndex].textContent
+                            .trim()
+                            .toLowerCase();
+
+
+                    // ID column
+
+                    if (columnIndex === 1) {
+
+                        return direction === 'asc'
+                            ? Number(valueA) - Number(valueB)
+                            : Number(valueB) - Number(valueA);
+
+                    }
+
+
+                    // Last Login column
+
+                    if (columnIndex === 5) {
+
+                        if (valueA === 'never') {
+                            return 1;
+                        }
+
+                        if (valueB === 'never') {
+                            return -1;
+                        }
+
+                        const dateA =
+                            new Date(valueA).getTime();
+
+                        const dateB =
+                            new Date(valueB).getTime();
+
+                        return direction === 'asc'
+                            ? dateA - dateB
+                            : dateB - dateA;
+
+                    }
+
+
+                    // Registered column
+
+                    if (columnIndex === 6) {
+
+                        const dateA =
+                            new Date(valueA).getTime();
+
+                        const dateB =
+                            new Date(valueB).getTime();
+
+                        return direction === 'asc'
+                            ? dateA - dateB
+                            : dateB - dateA;
+
+                    }
+
+
+                    // Normal text sorting
+
+                    if (valueA < valueB) {
+
+                        return direction === 'asc'
+                            ? -1
+                            : 1;
+
+                    }
+
+                    if (valueA > valueB) {
+
+                        return direction === 'asc'
+                            ? 1
+                            : -1;
+
+                    }
+
+                    return 0;
+
+                });
+
+
+                rows.forEach(function (row) {
+
+                    tbody.appendChild(row);
+
+                });
+
+            }
+
+
+            // ============================================================
+            // SORT INDICATORS
+            // ============================================================
+
+            function updateSortIndicators(activeHeader, direction) {
+
+                sortableHeaders.forEach(function (header) {
+
+                    const indicator =
+                        header.querySelector('.sort-indicator');
+
+                    indicator.textContent = '';
+
+                });
+
+
+                const indicator =
+                    activeHeader.querySelector('.sort-indicator');
+
+
+                if (direction === 'asc') {
+
+                    indicator.textContent = ' ↑';
+
+                } else {
+
+                    indicator.textContent = ' ↓';
+
+                }
+
+            }
+
+
+            /*
+             * Bootstrap tooltips
+             */
+
+            const tooltipTriggerList =
+                document.querySelectorAll(
+                    '[data-bs-toggle="tooltip"]'
+                );
+
+            [...tooltipTriggerList].map(
+                tooltipTriggerEl =>
+                    new bootstrap.Tooltip(
+                        tooltipTriggerEl
+                    )
+            );
+
+
+            /*
+             * Confirmation dialogs using Bootstrap modal
+             */
+
+            document.querySelectorAll(
+                '#delete-form, #delete-unverified-form'
+            ).forEach(function (form) {
+
+                form.addEventListener(
+                    'submit',
+                    function (event) {
+
+                        const message =
+                            form.id === 'delete-form'
+                                ? 'Are you sure you want to permanently delete the selected users?'
+                                : 'Delete the selected unverified users permanently?';
+
+                        if (!window.confirm(message)) {
+                            event.preventDefault();
+                        }
+
+                    }
+                );
+
+            });
+
+        });
+
+        document.querySelectorAll('.activity-sparkline').forEach(function (element) {
+
+            const values = element.dataset.activity
+                .split(',')
+                .map(Number);
+
+            values.forEach(function (value) {
+
+                const bar = document.createElement('span');
+
+                bar.classList.add('activity-bar');
+
+                if (value === 1) {
+                    bar.classList.add('active');
+                }
+
+                element.appendChild(bar);
+            });
+        });
+
+    </script>
+
     {% endblock %}
