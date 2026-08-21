@@ -25,8 +25,11 @@ RUN composer install \
     --no-interaction \
     --no-scripts
 
-RUN php bin/console cache:clear --env=prod
+RUN APP_SECRET=build-secret \
+    DEFAULT_URI=http://127.0.0.1 \
+    APP_DEFAULT_URI=http://127.0.0.1 \
+    php bin/console cache:clear --env=prod
 
 EXPOSE 80
 
-CMD ["sh", "-c", "php -S 0.0.0.0:${PORT:-80} -t public"]
+CMD ["sh", "-c", "php -S 0.0.0.0:${PORT:-80} -t public"] 
