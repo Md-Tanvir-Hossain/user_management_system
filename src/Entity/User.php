@@ -35,7 +35,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: 'Password is required.')]
     #[Assert\Length(
-        min: 8,
         max: 255,
         minMessage: 'Password must be at least {{ limit }} characters.'
     )]
